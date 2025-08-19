@@ -1,0 +1,41 @@
+name: Add empty commit on merge group
+
+on:
+  merge_group:
+    types: [ checks_requested ]
+
+jobs:
+  add-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # This permission is required to push a commit to the repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch the entire history of the repository
+          # This is necessary for a successful git push
+          fetch-depth: 0
+          # The branch in the merge group is checked out
+          ref: ${{ github.event.merge_group.head_ref }}
+
+      - name: Configure Git
+        run: |
+          # Set the user name and email for the commit
+          # This ensures the commit is correctly attributed to the bot
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add empty commit
+        run: |
+          # The '--allow-empty' flag creates a commit with no changes
+          # The commit message clearly states the purpose
+          git commit --allow-empty -m "docs: Add empty update commit"
+
+      - name: Push commit to branch
+        run: |
+          # Push the new commit to the origin repository
+          # The 'HEAD' reference points to the current branch
+          # The new commit will be pushed to the same branch the PR was on
+          git push origin HEAD
